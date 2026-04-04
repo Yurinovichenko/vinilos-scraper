@@ -32,7 +32,7 @@ MAX_ZIP_MB = 25
 
 GITHUB_PAGES_URL = os.environ.get(
     "GITHUB_PAGES_URL",
-    "https://tu-usuario.github.io/vinilos-scraper"
+    "https://yurinovichenko.github.io/vinilos-scraper"
 )
 
 
