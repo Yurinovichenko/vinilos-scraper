@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinilos Chile — Comparador de Precios</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #333;
+      --accent: #e8c840;
+      --accent2: #c8a820;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --available: #4caf50;
+      --unavailable: #888;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 18px;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 15px;
+      padding: 8px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #search-input:focus { border-color: var(--accent); }
+    #search-input::placeholder { color: var(--text-muted); }
+
+    .header-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px 12px;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ── Comparador de precios ── */
+    #price-comparator {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      display: none;
+    }
+    #price-comparator.visible { display: block; }
+    #comparator-title {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .comparator-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparator-row:last-child { border-bottom: none; }
+    .comparator-store { color: var(--text-muted); font-size: 12px; flex: 1; }
+    .comparator-price { color: var(--accent); font-weight: 600; font-size: 13px; min-width: 80px; text-align: right; }
+    .comparator-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .badge-available { background: #1a3d1a; color: var(--available); }
+    .badge-unavailable { background: #2a2a2a; color: var(--unavailable); }
+    .badge-cheapest { background: #3d3010; color: var(--accent); }
+
+    /* ── Tabla de resultados ── */
+    #results-info {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    #results-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #results-table th {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px 10px;
+      text-align: left;
+      text-transform: uppercase;
+      user-select: none;
+      white-space: nowrap;
+    }
+    #results-table th:hover { color: var(--accent); }
+    #results-table th.sorted { color: var(--accent); }
+    #results-table th .sort-arrow { margin-left: 4px; opacity: 0.5; }
+    #results-table th.sorted .sort-arrow { opacity: 1; }
+
+    #results-table td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+    #results-table tr:hover td { background: var(--surface2); }
+
+    .col-artist { color: var(--text); font-weight: 500; }
+    .col-album a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .col-album a:hover { color: var(--accent); text-decoration: underline; }
+    .col-price {
+      color: var(--accent);
+      font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .col-available {
+      text-align: center;
+      font-size: 18px;
+    }
+    .col-store { color: var(--text-muted); font-size: 12px; }
+    .col-compare {
+      text-align: center;
+    }
+    .compare-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 3px 8px;
+      transition: all 0.15s;
+    }
+    .compare-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .compare-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
+
+    /* ── Paginación ── */
+    #pagination {
+      align-items: center;
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 20px;
+      padding-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      min-width: 36px;
+      padding: 6px 10px;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+    /* ── Loading / Empty ── */
+    #loading {
+      color: var(--text-muted);
+      padding: 60px 20px;
+      text-align: center;
+    }
+    #empty {
+      color: var(--text-muted);
+      display: none;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .col-compare, th:last-child { display: none; }
+      #results-table td, #results-table th { padding: 7px 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>🎵 Vinilos Chile</h1>
+    <input type="search" id="search-input" placeholder="Buscar artista o álbum…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="header-meta">
+    <span id="meta-total">Cargando…</span>
+    <span id="meta-available"></span>
+    <span id="meta-date"></span>
+    <span id="meta-stores"></span>
+  </div>
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">Todos</button>
+    <button class="filter-btn" data-filter="available">Solo disponibles</button>
+  </div>
+</header>
+
+<main>
+  <div id="price-comparator">
+    <div id="comparator-title"></div>
+    <div id="comparator-rows"></div>
+  </div>
+
+  <div id="results-info"></div>
+  <div id="loading">Cargando base de datos de vinilos…</div>
+  <div id="empty">Sin resultados. Intenta con otra búsqueda.</div>
+
+  <table id="results-table" style="display:none">
+    <thead>
+      <tr>
+        <th data-col="a">Artista <span class="sort-arrow">↕</span></th>
+        <th data-col="al">Álbum <span class="sort-arrow">↕</span></th>
+        <th data-col="p" style="text-align:right">Precio <span class="sort-arrow">↕</span></th>
+        <th data-col="av" style="text-align:center">Disp.</th>
+        <th data-col="s">Tienda <span class="sort-arrow">↕</span></th>
+        <th>Comparar</th>
+      </tr>
+    </thead>
+    <tbody id="results-body"></tbody>
+  </table>
+
+  <div id="pagination"></div>
+</main>
+
+<script src="https://unpkg.com/lunr/lunr.js"></script>
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 50;
+
+// ── Estado global ────────────────────────────────────────────────────────────
+let allData = [];        // Datos crudos del JSON
+let lunrIndex = null;    // Índice lunr.js
+let lunrMap = {};        // id → item para lookup O(1)
+
+let currentQuery = "";
+let currentFilter = "all";   // "all" | "available"
+let sortCol = "a";
+let sortAsc = true;
+let currentPage = 1;
+let filteredData = [];   // Resultado actual (búsqueda + filtro + orden)
+let activeComparatorKey = null; // "artist|||album" del comparador activo
+
+// ── Carga de datos ───────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [dataRes, metaRes] = await Promise.all([
+      fetch("data/vinyls.json"),
+      fetch("data/meta.json"),
+    ]);
+
+    allData = await dataRes.json();
+    const meta = await metaRes.json();
+
+    // Metadatos en header
+    const fmt = n => n.toLocaleString("es-CL");
+    document.getElementById("meta-total").textContent = `${fmt(meta.total)} vinilos`;
+    document.getElementById("meta-available").textContent =
+      `${fmt(meta.available)} disponibles (${Math.round(meta.available / meta.total * 100)}%)`;
+    document.getElementById("meta-date").textContent =
+      `Actualizado: ${formatDate(meta.run_date)}`;
+    document.getElementById("meta-stores").textContent =
+      `${Object.keys(meta.stores).length} tiendas`;
+
+    buildIndex();
+    applyFilters();
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("results-table").style.display = "";
+
+  } catch (e) {
+    document.getElementById("loading").textContent =
+      "Error cargando datos. Verifica que el archivo vinyls.json esté disponible.";
+    console.error(e);
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+// ── Índice lunr.js ───────────────────────────────────────────────────────────
+function buildIndex() {
+  lunrIndex = lunr(function () {
+    this.ref("_id");
+    this.field("a", { boost: 3 });   // artista: más relevante
+    this.field("al", { boost: 2 });  // álbum
+
+    // lunr no soporta español nativo; usamos pipeline mínimo
+    this.pipeline.remove(lunr.stemmer);
+
+    allData.forEach((item, i) => {
+      lunrMap[i] = item;
+      this.add({ _id: i, a: item.a, al: item.al });
+    });
+  });
+}
+
+// ── Búsqueda y filtrado ──────────────────────────────────────────────────────
+function applyFilters() {
+  let results;
+
+  if (currentQuery.trim().length < 2) {
+    // Sin búsqueda: mostrar todos
+    results = [...allData];
+  } else {
+    // Búsqueda lunr con wildcard para prefijos
+    const q = currentQuery.trim().toLowerCase();
+    const lunrQuery = q.split(/\s+/).map(w => `${w}*`).join(" ");
+    try {
+      const hits = lunrIndex.search(lunrQuery);
+      results = hits.map(h => lunrMap[parseInt(h.ref)]);
+    } catch (_) {
+      // Fallback: búsqueda simple con includes
+      results = allData.filter(item =>
+        item.a.toLowerCase().includes(q) || item.al.toLowerCase().includes(q)
+      );
+    }
+  }
+
+  // Filtro disponibilidad
+  if (currentFilter === "available") {
+    results = results.filter(r => r.av === 1);
+  }
+
+  // Ordenamiento
+  results.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === "string") va = va.toLowerCase();
+    if (typeof vb === "string") vb = vb.toLowerCase();
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  filteredData = results;
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+  updateResultsInfo();
+}
+
+// ── Render tabla ─────────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("results-body");
+  const empty = document.getElementById("empty");
+  const table = document.getElementById("results-table");
+
+  if (filteredData.length === 0) {
+    table.style.display = "none";
+    empty.style.display = "block";
+    return;
+  }
+
+  table.style.display = "";
+  empty.style.display = "none";
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredData.slice(start, start + PAGE_SIZE);
+
+  tbody.innerHTML = page.map(item => {
+    const key = `${item.a}|||${item.al}`;
+    const isActive = key === activeComparatorKey;
+    const priceStr = item.p > 0 ? `$${item.p.toLocaleString("es-CL")}` : "—";
+    const albumCell = item.l
+      ? `<a href="${escapeHtml(item.l)}" target="_blank" rel="noopener">${escapeHtml(item.al)}</a>`
+      : escapeHtml(item.al);
+
+    return `<tr>
+      <td class="col-artist">${escapeHtml(item.a)}</td>
+      <td class="col-album">${albumCell}</td>
+      <td class="col-price">${priceStr}</td>
+      <td class="col-available">${item.av ? "✅" : "⬜"}</td>
+      <td class="col-store">${escapeHtml(item.s)}</td>
+      <td class="col-compare">
+        <button class="compare-btn${isActive ? " active" : ""}"
+          onclick="toggleComparator(${JSON.stringify(item.a)}, ${JSON.stringify(item.al)}, this)">
+          Ver precios
+        </button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ── Comparador de precios ────────────────────────────────────────────────────
+function toggleComparator(artist, album, btn) {
+  const key = `${artist}|||${album}`;
+
+  if (activeComparatorKey === key) {
+    // Cerrar comparador
+    activeComparatorKey = null;
+    document.getElementById("price-comparator").classList.remove("visible");
+    document.querySelectorAll(".compare-btn.active").forEach(b => b.classList.remove("active"));
+    return;
+  }
+
+  activeComparatorKey = key;
+  document.querySelectorAll(".compare-btn.active").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  showComparator(artist, album);
+}
+
+function showComparator(artist, album) {
+  // Buscar todas las entradas del mismo disco en todas las tiendas
+  // Nivel 1: match exacto de artista_norm + album_norm
+  // Nivel 2: fuzzy con similitud básica (>80% chars en común)
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aNorm = normalize(artist);
+  const alNorm = normalize(album);
+
+  const matches = allData.filter(item => {
+    const ia = normalize(item.a);
+    const ial = normalize(item.al);
+    // Match exacto
+    if (ia === aNorm && ial === alNorm) return true;
+    // Match con tolerancia: artista idéntico + álbum muy similar
+    if (ia === aNorm && similarity(ial, alNorm) > 0.80) return true;
+    return false;
+  });
+
+  // Agrupar por tienda (precio más bajo por tienda)
+  const byStore = {};
+  matches.forEach(item => {
+    if (!byStore[item.s] || item.p < byStore[item.s].p) {
+      byStore[item.s] = item;
+    }
+  });
+
+  const sorted = Object.values(byStore).sort((a, b) => {
+    if (a.av !== b.av) return b.av - a.av; // disponibles primero
+    return a.p - b.p; // luego por precio
+  });
+
+  const minPrice = Math.min(...sorted.filter(s => s.av).map(s => s.p).filter(p => p > 0));
+
+  document.getElementById("comparator-title").textContent =
+    `${artist} — ${album} · ${sorted.length} tienda${sorted.length !== 1 ? "s" : ""}`;
+
+  document.getElementById("comparator-rows").innerHTML = sorted.map(item => {
+    const isCheapest = item.p === minPrice && item.av;
+    const priceStr = item.p > 0 ? `$${item.p.toLocaleString("es-CL")}` : "—";
+    const linkOpen = item.l ? `<a href="${escapeHtml(item.l)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">` : "";
+    const linkClose = item.l ? "</a>" : "";
+    return `<div class="comparator-row">
+      <span class="comparator-store">${linkOpen}${escapeHtml(item.s)}${linkClose}</span>
+      <span class="comparator-price">${linkOpen}${priceStr}${linkClose}</span>
+      ${isCheapest ? '<span class="comparator-badge badge-cheapest">más barato</span>' : ""}
+      <span class="comparator-badge ${item.av ? "badge-available" : "badge-unavailable"}">
+        ${item.av ? "disponible" : "sin stock"}
+      </span>
+    </div>`;
+  }).join("");
+
+  document.getElementById("price-comparator").classList.add("visible");
+  document.getElementById("price-comparator").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// Similitud simple: caracteres en común / longitud máxima
+function similarity(a, b) {
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  let matches = 0;
+  for (const c of shorter) {
+    if (longer.includes(c)) matches++;
+  }
+  return matches / longer.length;
+}
+
+// ── Paginación ───────────────────────────────────────────────────────────────
+function renderPagination() {
+  const total = filteredData.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const container = document.getElementById("pagination");
+
+  if (totalPages <= 1) { container.innerHTML = ""; return; }
+
+  const buttons = [];
+
+  // Prev
+  buttons.push(`<button class="page-btn" onclick="goToPage(${currentPage - 1})"
+    ${currentPage === 1 ? "disabled" : ""}>‹</button>`);
+
+  // Páginas: mostrar ventana alrededor de la actual
+  const range = getPageRange(currentPage, totalPages);
+  let prev = null;
+  for (const p of range) {
+    if (prev !== null && p - prev > 1) {
+      buttons.push(`<span style="color:var(--text-muted);padding:0 4px">…</span>`);
+    }
+    buttons.push(`<button class="page-btn${p === currentPage ? " active" : ""}"
+      onclick="goToPage(${p})">${p}</button>`);
+    prev = p;
+  }
+
+  // Next
+  buttons.push(`<button class="page-btn" onclick="goToPage(${currentPage + 1})"
+    ${currentPage === totalPages ? "disabled" : ""}>›</button>`);
+
+  container.innerHTML = buttons.join("");
+}
+
+function getPageRange(current, total) {
+  const delta = 2;
+  const range = new Set([1, total]);
+  for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+    range.add(i);
+  }
+  return Array.from(range).sort((a, b) => a - b);
+}
+
+function goToPage(p) {
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+  renderPagination();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ── Info de resultados ───────────────────────────────────────────────────────
+function updateResultsInfo() {
+  const total = filteredData.length;
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
+  const info = document.getElementById("results-info");
+  if (total === 0) {
+    info.textContent = "";
+  } else {
+    info.textContent = `Mostrando ${start.toLocaleString("es-CL")}–${end.toLocaleString("es-CL")} de ${total.toLocaleString("es-CL")} resultados`;
+  }
+}
+
+// ── Ordenamiento por columna ─────────────────────────────────────────────────
+document.querySelectorAll("#results-table th[data-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.col;
+    if (sortCol === col) {
+      sortAsc = !sortAsc;
+    } else {
+      sortCol = col;
+      sortAsc = true;
+    }
+    document.querySelectorAll("#results-table th").forEach(t => t.classList.remove("sorted"));
+    th.classList.add("sorted");
+    th.querySelector(".sort-arrow").textContent = sortAsc ? "↑" : "↓";
+    applyFilters();
+  });
+});
+
+// ── Búsqueda con debounce ────────────────────────────────────────────────────
+let debounceTimer;
+document.getElementById("search-input").addEventListener("input", e => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    currentQuery = e.target.value;
+    activeComparatorKey = null;
+    document.getElementById("price-comparator").classList.remove("visible");
+    applyFilters();
+  }, 300);
+});
+
+// ── Filtros ──────────────────────────────────────────────────────────────────
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    activeComparatorKey = null;
+    document.getElementById("price-comparator").classList.remove("visible");
+    applyFilters();
+  });
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>

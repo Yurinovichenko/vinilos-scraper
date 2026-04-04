@@ -1,0 +1,101 @@
+name: Scraping semanal de vinilos
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 AM Chile verano (UTC-3) / 02:00 AM invierno (UTC-4)
+    # Viernes por la madrugada
+    - cron: "0 6 * * 5"
+  workflow_dispatch:  # Trigger manual para testing
+
+jobs:
+  # ─── Job 1: Validar secrets antes de gastar minutos de scraping ─────────────
+  validate-secrets:
+    name: Validar configuración
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar secrets requeridos
+        run: |
+          missing=""
+          [ -z "${{ secrets.GMAIL_USER }}" ] && missing="$missing GMAIL_USER"
+          [ -z "${{ secrets.GMAIL_APP_PASSWORD }}" ] && missing="$missing GMAIL_APP_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "❌ Secrets faltantes:$missing"
+            echo "Configura estos secrets en Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ Todos los secrets configurados"
+
+  # ─── Job 2: Scraping + Deploy + Email ───────────────────────────────────────
+  scrape-and-publish:
+    name: Scraping y publicación
+    needs: validate-secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Para commit de estado
+      pages: write         # Para deploy a GitHub Pages
+      id-token: write      # Requerido por actions/deploy-pages
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar scraping
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python main.py
+        timeout-minutes: 50
+
+      - name: Verificar archivos generados
+        run: |
+          echo "=== Archivos generados ==="
+          ls -lh vinyls_*.xlsx 2>/dev/null || echo "⚠️  Sin Excel"
+          ls -lh web/data/vinyls.json 2>/dev/null || echo "⚠️  Sin JSON"
+          ls -lh web/data/meta.json 2>/dev/null || echo "⚠️  Sin meta.json"
+
+          # Verificar tamaño mínimo del JSON (al menos 100KB = datos reales)
+          if [ -f web/data/vinyls.json ]; then
+            size=$(stat -c%s web/data/vinyls.json)
+            if [ "$size" -lt 102400 ]; then
+              echo "⚠️  vinyls.json parece muy pequeño: ${size} bytes"
+            else
+              echo "✅ vinyls.json: ${size} bytes"
+            fi
+          fi
+
+      - name: Commit estado del run
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add data/last_run_stats.json data/store_status.json 2>/dev/null || true
+          # NO commitear vinyls.json ni el Excel (demasiado pesados)
+          git diff --staged --quiet || git commit -m "chore: run state $(date +%Y-%m-%d)"
+          git push || true
+
+      - name: Preparar artifact de GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/
+
+      - name: Deploy a GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+    env:
+      GMAIL_USER: ${{ secrets.GMAIL_USER }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      GITHUB_PAGES_URL: "https://${{ github.repository_owner }}.github.io/vinilos-scraper"

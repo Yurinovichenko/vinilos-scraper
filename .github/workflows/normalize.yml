@@ -1,0 +1,41 @@
+name: Normalización mensual (MusicBrainz)
+
+on:
+  schedule:
+    # Primer domingo de cada mes a las 08:00 UTC
+    - cron: "0 8 1-7 * 0"
+  workflow_dispatch:  # Trigger manual
+
+jobs:
+  normalize:
+    name: Normalización con MusicBrainz
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar normalización (Capa 3 — MusicBrainz)
+        run: python normalize.py
+        timeout-minutes: 120
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Commit cache MusicBrainz actualizada
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add data/mb_cache.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: mb_cache update $(date +%Y-%m-%d)"
+          git push || true

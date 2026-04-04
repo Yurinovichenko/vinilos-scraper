@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Output generado — no versionar
+output/
+web/data/vinyls.json
+web/data/meta.json
+data/scraper.log
+vinyls_*.xlsx
+vinyls_*.xlsx.zip
+
+# macOS
+.DS_Store
+
+# Sí versionar estos archivos de estado:
+!data/last_run_stats.json
+!data/store_status.json
+!data/mb_cache.json

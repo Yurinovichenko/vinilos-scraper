@@ -1,0 +1,264 @@
+{
+  "run_date": "2026-04-04",
+  "total_products": 2006,
+  "stores": {
+    "Musicland": {
+      "count": 100,
+      "status": "ok"
+    },
+    "DisqueriaKYD": {
+      "count": 50,
+      "status": "ok"
+    },
+    "Sonar": {
+      "count": 12,
+      "status": "ok"
+    },
+    "BaltazarVinyl": {
+      "count": 19,
+      "status": "ok"
+    },
+    "RockStore": {
+      "count": 21,
+      "status": "ok"
+    },
+    "PuntoMusical": {
+      "count": 36,
+      "status": "ok"
+    },
+    "MusicJungle": {
+      "count": 50,
+      "status": "ok"
+    },
+    "Vinitrola": {
+      "count": 80,
+      "status": "ok"
+    },
+    "BlackVinyl": {
+      "count": 44,
+      "status": "ok"
+    },
+    "VinilosAlvaro": {
+      "count": 30,
+      "status": "ok"
+    },
+    "Kolala": {
+      "count": 12,
+      "status": "ok"
+    },
+    "FGHighEnd": {
+      "count": 38,
+      "status": "ok"
+    },
+    "HighEnd": {
+      "count": 44,
+      "status": "ok"
+    },
+    "VinilotecaNuevos": {
+      "count": 10,
+      "status": "ok"
+    },
+    "Hitway": {
+      "count": 250,
+      "status": "ok"
+    },
+    "Needle": {
+      "count": 147,
+      "status": "ok"
+    },
+    "AltoQueRecordsNuevos": {
+      "count": 250,
+      "status": "ok"
+    },
+    "AltoQueRecordsOriginales": {
+      "count": 250,
+      "status": "ok"
+    },
+    "VinilosPorMayor": {
+      "count": 250,
+      "status": "ok"
+    },
+    "CycoRecords": {
+      "count": 23,
+      "status": "ok"
+    },
+    "ElevenStore": {
+      "count": 12,
+      "status": "ok"
+    },
+    "MusicWorld": {
+      "count": 12,
+      "status": "ok"
+    },
+    "MusicLife": {
+      "count": 45,
+      "status": "ok"
+    },
+    "Disqueria12Pulgadas": {
+      "count": 32,
+      "status": "ok"
+    },
+    "SVinilos": {
+      "count": 36,
+      "status": "ok"
+    },
+    "FuturoPrimitivo": {
+      "count": 20,
+      "status": "ok"
+    },
+    "DisqueriaBazarDeCulto": {
+      "count": 20,
+      "status": "ok"
+    },
+    "Billboard": {
+      "count": 12,
+      "status": "ok"
+    },
+    "PlazaMusica": {
+      "count": 24,
+      "status": "ok"
+    },
+    "OrejaMusic": {
+      "count": 59,
+      "status": "ok"
+    },
+    "LaTiendaNacional": {
+      "count": 18,
+      "status": "ok"
+    }
+  },
+  "needs_review": [
+    {
+      "artist": "Steve Hackett",
+      "album": "To Watch the Storms Vinilo 2lp Naranjo"
+    },
+    {
+      "artist": "A-ha",
+      "album": "Hunting High and Low"
+    },
+    {
+      "artist": "A Tribe Called Quest",
+      "album": "Peoples Instinctive Travels and the Paths of Rhythm"
+    },
+    {
+      "artist": "Queen",
+      "album": "Greatest Hits"
+    },
+    {
+      "artist": "Gorillaz",
+      "album": "Song Machine Season One"
+    },
+    {
+      "artist": "The Beatles",
+      "album": "From Us to You #2 March 1964"
+    },
+    {
+      "artist": "",
+      "album": "Led Zeppelin: Led Zeppelin Iv"
+    },
+    {
+      "artist": "Apple, Fiona",
+      "album": "Fetch the Bolt Cutters"
+    },
+    {
+      "artist": "Arca",
+      "album": "Kick Ii"
+    },
+    {
+      "artist": "Aguaturbia",
+      "album": "Aguaturbia"
+    },
+    {
+      "artist": "Americo",
+      "album": "A Morir"
+    },
+    {
+      "artist": "Alan Parson",
+      "album": "I Robot"
+    },
+    {
+      "artist": "Juan Gabriel",
+      "album": "Mis 40 En Bellas Artes V.2"
+    },
+    {
+      "artist": "Congreso",
+      "album": "Pajaros De Arcilla"
+    },
+    {
+      "artist": "Modern Talking",
+      "album": "Back for Good"
+    },
+    {
+      "artist": "Charly Garcia",
+      "album": "Yendo De La Cama Al Living"
+    },
+    {
+      "artist": "Queen",
+      "album": "Greatest Hits 1 (2lp) (180grs)(dl Card)"
+    },
+    {
+      "artist": "Olivia Rodrigo",
+      "album": "Sour"
+    },
+    {
+      "artist": "Led Zeppelin",
+      "album": "Led Zeppelin"
+    },
+    {
+      "artist": "Charli Xcx",
+      "album": "Brat and It's the Same but There's Three More Songs So It's Not"
+    },
+    {
+      "artist": "Aerstame",
+      "album": "Aéreo 27 (vinilo Simple) (autografiado)"
+    },
+    {
+      "artist": "Polyvinyl Record Company",
+      "album": "Strfkr - Being No One, Going Nowhere (remixes)"
+    },
+    {
+      "artist": "Alanis Morissette",
+      "album": "Jagged Little Pill"
+    },
+    {
+      "artist": "Xl Recording",
+      "album": "Arca - Kick I"
+    },
+    {
+      "artist": "Blue Note",
+      "album": "Blue Note Re:imagined"
+    },
+    {
+      "artist": "Charli Xcx",
+      "album": "Charli."
+    },
+    {
+      "artist": "Congregacion",
+      "album": "Congregacion Viene..."
+    },
+    {
+      "artist": "Foals",
+      "album": "Everything Not Saved Will Be Lost: Part 1"
+    },
+    {
+      "artist": "",
+      "album": "The Doors L.a. Woman"
+    },
+    {
+      "artist": "",
+      "album": "The Doors Strange Days"
+    },
+    {
+      "artist": "",
+      "album": "Alice in Chains...dirt (doble)"
+    },
+    {
+      "artist": "",
+      "album": "Arcade Fire...glastonbury Festival Part 1"
+    },
+    {
+      "artist": "",
+      "album": "El Fin De La Inocencia (lp Marmoleado)"
+    }
+  ]
+}
