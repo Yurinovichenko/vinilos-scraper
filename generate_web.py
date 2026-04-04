@@ -2,14 +2,12 @@
 generate_web.py — Genera los archivos de salida del scraper.
 
 Salidas:
-  1. vinyls_YYYY-MM-DD.xlsx  — Excel multi-hoja
+  1. vinyls_YYYY-MM-DD.xlsx  — Excel hoja única con todos los productos
   2. web/data/vinyls.json    — JSON compacto para GitHub Pages
 
-Excel multi-hoja:
-  - "Productos"     : todos los productos con campos completos
-  - "Resumen"       : conteo por tienda + % disponibilidad
-  - "Comparación"   : delta vs run anterior por tienda
-  - "Errores"       : tiendas con problemas del run actual
+Excel hoja única:
+  Columnas: Artista, Álbum, Precio (CLP), Disponible, Tienda, URL
+  Ordenado por Tienda → Artista → Álbum para facilitar filtrado nativo de Excel.
 
 JSON compacto para la web:
   Campos: {a, al, p, av, l, s} = artist, album, price, available, link, store
@@ -42,114 +40,40 @@ def generate_excel(
     last_stats: dict,
     run_date: str,
 ) -> Path:
-    """Genera el Excel multi-hoja. Retorna la ruta al archivo."""
+    """Genera Excel hoja única con todos los productos. Retorna la ruta al archivo."""
     try:
         import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
-        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Font, PatternFill
     except ImportError:
         logger.error("openpyxl no instalado. Instalar con: pip install openpyxl")
         return Path()
 
     wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Vinilos"
 
-    # ── Hoja 1: Productos ─────────────────────────────────────────────────────
-    ws_prod = wb.active
-    ws_prod.title = "Productos"
-
-    headers = ["Artista", "Álbum", "Precio (CLP)", "Disponible", "Tienda", "URL",
-               "Artista Norm.", "Álbum Norm."]
-    _write_header_row(ws_prod, headers)
+    headers = ["Artista", "Álbum", "Precio (CLP)", "Disponible", "Tienda", "URL"]
+    _write_header_row(ws, headers)
 
     for p in sorted(products, key=lambda x: (x.store, x.artist.lower(), x.album.lower())):
-        ws_prod.append([
+        ws.append([
             p.artist,
             p.album,
             p.price,
             "Sí" if p.available else "No",
             p.store,
             p.url,
-            p.artist_norm or p.artist,
-            p.album_norm or p.album,
         ])
 
-    # Formato de precio como número
-    for row in ws_prod.iter_rows(min_row=2, min_col=3, max_col=3):
+    # Precio como número con separador de miles
+    for row in ws.iter_rows(min_row=2, min_col=3, max_col=3):
         for cell in row:
             cell.number_format = '#,##0'
 
-    _auto_column_width(ws_prod)
+    # Autofilter en la fila de encabezado
+    ws.auto_filter.ref = ws.dimensions
 
-    # ── Hoja 2: Resumen ───────────────────────────────────────────────────────
-    ws_sum = wb.create_sheet("Resumen")
-    _write_header_row(ws_sum, ["Tienda", "Total", "Disponibles", "% Disponible", "Precio Mín.", "Precio Máx.", "Precio Prom."])
-
-    store_products: dict[str, list[Product]] = {}
-    for p in products:
-        store_products.setdefault(p.store, []).append(p)
-
-    for store_name in sorted(store_products):
-        plist = store_products[store_name]
-        available = sum(1 for p in plist if p.available)
-        prices = [p.price for p in plist if p.price > 0]
-        ws_sum.append([
-            store_name,
-            len(plist),
-            available,
-            f"{available / len(plist):.0%}" if plist else "0%",
-            min(prices) if prices else 0,
-            max(prices) if prices else 0,
-            int(sum(prices) / len(prices)) if prices else 0,
-        ])
-
-    _auto_column_width(ws_sum)
-
-    # ── Hoja 3: Comparación con run anterior ─────────────────────────────────
-    ws_cmp = wb.create_sheet("Comparación")
-    _write_header_row(ws_cmp, ["Tienda", "Actual", "Anterior", "Delta", "% Cambio", "Estado"])
-
-    prev_stores = last_stats.get("stores", {})
-    for store_name in sorted(set(list(results_by_store.keys()) + list(prev_stores.keys()))):
-        current = results_by_store.get(store_name, 0)
-        previous = prev_stores.get(store_name, {}).get("count", 0)
-        delta = current - previous
-        pct = f"{delta / previous:.0%}" if previous > 0 else "N/A"
-        if previous == 0:
-            status = "NUEVO"
-        elif current == 0:
-            status = "SIN DATOS"
-        elif delta < -previous * 0.5:
-            status = "⚠️ CAÍDA >50%"
-        elif delta > previous * 0.5:
-            status = "↑ CRECIMIENTO"
-        else:
-            status = "OK"
-        ws_cmp.append([store_name, current, previous, delta, pct, status])
-
-    _auto_column_width(ws_cmp)
-
-    # ── Hoja 4: Errores ───────────────────────────────────────────────────────
-    ws_err = wb.create_sheet("Errores")
-    _write_header_row(ws_err, ["Tienda", "Tipo Error", "Mensaje", "Recuperable"])
-
-    if errors:
-        for err in errors:
-            ws_err.append([
-                err.store_name,
-                err.error_type,
-                err.message[:200],
-                "Sí" if err.recoverable else "No",
-            ])
-    else:
-        ws_err.append(["(Sin errores en este run)", "", "", ""])
-
-    if sanity_alerts:
-        ws_err.append([])
-        ws_err.append(["⚠️ ALERTAS SANITY CHECK", "", "", ""])
-        for alert in sanity_alerts:
-            ws_err.append([alert, "", "", ""])
-
-    _auto_column_width(ws_err)
+    _auto_column_width(ws)
 
     # Guardar
     filename = f"vinyls_{run_date}.xlsx"
