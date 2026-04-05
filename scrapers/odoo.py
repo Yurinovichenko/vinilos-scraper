@@ -34,9 +34,14 @@ class OdooScraper(BaseScraper):
         # Odoo usa /page/N como sufijo de ruta
         return f"{base}/page/{page}"
 
+    # Límite de seguridad: Odoo estándar muestra 20 productos/página.
+    # 500 páginas × 20 = 10.000 productos máx por tienda. Más que suficiente.
+    _MAX_PAGES = 500
+
     async def scrape(self) -> tuple[list[Product], Optional[ScrapeError]]:
         products: list[Product] = []
         page = 1
+        seen_urls: set[str] = set()  # Detectar páginas con contenido repetido
 
         async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
             while True:
@@ -61,6 +66,18 @@ class OdooScraper(BaseScraper):
                         self.record_parse_attempt(False)
                     break
 
+                # Detectar contenido repetido: extraer URLs de productos de esta página
+                page_urls = set()
+                for item in items:
+                    link = item.select_one("a[href]")
+                    if link and link.get("href"):
+                        page_urls.add(link["href"].split("?")[0])
+
+                if page_urls and page_urls.issubset(seen_urls):
+                    logger.info(f"[{self.store.name}] Página {page} repetida — fin de catálogo")
+                    break
+                seen_urls.update(page_urls)
+
                 for item in items:
                     product = self._parse_product(item)
                     if product:
@@ -72,6 +89,10 @@ class OdooScraper(BaseScraper):
                 logger.info(f"[{self.store.name}] Página {page}: {len(items)} productos ({len(products)} total)")
 
                 if self.limit and len(products) >= self.limit:
+                    break
+
+                if page >= self._MAX_PAGES:
+                    logger.warning(f"[{self.store.name}] Límite de {self._MAX_PAGES} páginas alcanzado")
                     break
 
                 if not self._has_next_page(soup):
