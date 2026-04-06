@@ -209,8 +209,8 @@ class WoocommerceScraper(BaseScraper):
 
             if not album:
                 return None
-            # Precio 0 = ítem promocional (banner, cuotas, etc.), no un vinilo real
-            if price == 0:
+            # Precio 0 en item que NO está marcado como agotado = banner/promocional, descartar
+            if price == 0 and available:
                 return None
 
             return Product(
